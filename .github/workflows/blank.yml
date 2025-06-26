@@ -27,40 +27,24 @@ jobs:
           flutter-version: '3.32.4' # نسخه دقیق Flutter SDK که پروژه شما با آن کار می کند
           channel: 'stable'         # استفاده از کانال stable (پایدار) فلاتر
 
-      - name: Install Android SDK platforms and build tools # مرحله چهارم: نصب کامپوننت های Android SDK
+      - name: Configure Android SDK Path and Install Components # مرحله چهارم: تنظیم PATH و نصب کامپوننت ها
         run: |
-          # مسیر Android SDK Root را تنظیم می کنیم (مهم برای یافتن sdkmanager و ابزارها)
-          echo "ANDROID_SDK_ROOT=$HOME/Android/sdk" >> $GITHUB_ENV
-          echo "$HOME/Android/sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
-          echo "$HOME/Android/sdk/platform-tools" >> $GITHUB_PATH
-
-          # ساخت پوشه برای cmdline-tools
-          mkdir -p $ANDROID_SDK_ROOT/cmdline-tools/latest
-
-          # دانلود و استخراج آخرین نسخه Command Line Tools برای لینوکس
-          # ما چندین لینک را امتحان می کنیم تا در صورت خرابی یک لینک، از دیگری استفاده شود.
-          # wget --content-disposition سعی می کند نام فایل را از سرور دریافت کند.
-          # اگر همه لینک ها Fail شوند، خطای نهایی داده می شود.
-          wget --content-disposition https://dl.google.com/android/repository/commandlinetools-linux-latest.zip -O cmdline-tools.zip || \
-          wget https://dl.google.com/android/repository/commandlinetools-linux-8583023_latest.zip -O cmdline-tools.zip || \
-          wget https://dl.google.com/android/repository/commandlinetools-linux-8098552_latest.zip -O cmdline-tools.zip || \
-          (echo "Error: Could not download any version of cmdline-tools. Please check Google's download links or GitHub Actions logs for specific error." && exit 1)
-
-          # استخراج فایل های cmdline-tools به پوشه latest
-          unzip -q cmdline-tools.zip -d $ANDROID_SDK_ROOT/cmdline-tools/latest
-          # حذف فایل فشرده دانلود شده
-          rm cmdline-tools.zip
+          # اطمینان از تنظیم ANDROID_HOME توسط flutter-action (یا یک مسیر پیش فرض)
+          echo "ANDROID_HOME: $ANDROID_HOME" # نمایش مسیر ANDROID_HOME برای debugging
           
-          # اطمینان از قابلیت اجرایی بودن sdkmanager
-          chmod +x $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager
+          # اضافه کردن مسیر cmdline-tools/latest/bin به PATH برای اجرای sdkmanager
+          # flutter-action معمولا cmdline-tools را در $ANDROID_HOME/cmdline-tools/latest/bin قرار می دهد
+          # این مسیر را به PATH فعلی اضافه می کنیم تا sdkmanager پیدا شود.
+          export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$PATH"
+          echo "PATH after adding cmdline-tools: $PATH" # نمایش PATH جدید برای debugging
 
-          # پذیرش لایسنس های Android SDK به صورت خودکار با استفاده از sdkmanager
+          # پذیرش لایسنس های Android SDK به صورت خودکار
           # '|| true' باعث می شود که اگر خطایی در پذیرش لایسنس ها رخ داد، Workflow متوقف نشود.
-          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          yes | sdkmanager --licenses || true
           
-          # نصب پلتفرم اندروید 34، ابزارهای بیلد 34.0.0 و platform-tools با استفاده از sdkmanager
-          # (platform-tools در cmdline-tools قرار دارد اما برای اطمینان مجدد نصب می شود)
-          $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "platforms;android-34" "build-tools;34.0.0" "platform-tools"
+          # نصب پلتفرم اندروید 34، ابزارهای بیلد 34.0.0 و platform-tools
+          # (platform-tools به صورت مستقل هم نصب می شود تا از وجود آن اطمینان حاصل شود)
+          sdkmanager "platforms;android-34" "build-tools;34.0.0" "platform-tools"
 
       - name: Restore Flutter packages # مرحله پنجم: دریافت و بازیابی پکیج های Dart/Flutter
         run: flutter pub get
