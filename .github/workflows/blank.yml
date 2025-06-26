@@ -25,11 +25,11 @@ jobs:
           flutter-version: '3.32.4' # نسخه دقیق Flutter که در doctor شما بود
           channel: 'stable'
 
-      - name: Install Android SDK platforms and build tools
-        # استفاده از SDK Manager از طریق flutter doctor --android-licenses برای اطمینان از نصب صحیح
-        # این کار ابزارهای مورد نیاز را نصب و لایسنس ها را قبول می کند.
+      - name: Accept Android SDK licenses and Install platforms/build tools
         run: |
-          flutter doctor --android-licenses --no-color || true
+          # پذیرش لایسنس های Android SDK به صورت خودکار
+          # سپس نصب پلتفرم 34، ابزارهای بیلد 34.0.0 و آخرین Command-line tools
+          echo y | sdkmanager --licenses
           sdkmanager "platforms;android-34" "build-tools;34.0.0" "cmdline-tools;latest"
 
       - name: Restore Flutter packages
