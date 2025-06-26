@@ -1,0 +1,56 @@
+name: Flutter Android Build
+
+on:
+  push:
+    branches:
+      - main # یا هر برنچ دیگری که کد اصلی شما در آن قرار دارد
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.x' # یا نسخه دقیق Flutter SDK پروژه شما (مثلاً 3.32.4)
+          channel: 'stable'
+
+      - name: Install Android SDK platforms and build tools
+        run: |
+          yes | sdkmanager "platforms;android-34" "build-tools;34.0.0" "cmdline-tools;latest"
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17' # یا نسخه JDK مورد نیاز (معمولا 11 یا 17 برای فلاتر)
+
+      - name: Restore Flutter packages
+        run: flutter pub get
+
+      - name: Decode Google Services (Optional for Firebase)
+        if: ${{ secrets.GOOGLE_SERVICES_JSON != '' }}
+        run: |
+          echo "${{ secrets.GOOGLE_SERVICES_JSON }}" > android/app/google-services.json
+
+      - name: Build Android APK
+        run: flutter build apk --release
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Build Android AppBundle
+        run: flutter build appbundle --release
+
+      - name: Upload AppBundle artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-bundle
+          path: build/app/outputs/bundle/release/app-release.aab
