@@ -1,72 +1,81 @@
-name: Flutter Android Build
+name: Flutter Android Build # نام Workflow که در GitHub Actions نمایش داده می شود
 
 on:
   push:
     branches:
-      - main # مطمئن شوید این branch درست است
+      - main # این Workflow با هر push به branch 'main' اجرا می شود.
+              # اگر branch اصلی شما 'master' است، آن را به 'master' تغییر دهید.
+  workflow_dispatch: # این به شما اجازه می دهد که Workflow را به صورت دستی از رابط کاربری GitHub Actions اجرا کنید.
 
 jobs:
   build:
-    runs-on: ubuntu-latest # سیستم عاملی که بیلد روی آن اجرا می شود
+    runs-on: ubuntu-latest # Workflow روی یک ماشین مجازی لینوکس (اوبونتو) اجرا می شود.
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4 # برای دسترسی به کدها در Workflow
+      - name: Checkout code # مرحله اول: دانلود کدهای پروژه از مخزن GitHub
+        uses: actions/checkout@v4
 
-      - name: Set up Java
+      - name: Set up Java # مرحله دوم: نصب و تنظیم Java Development Kit (JDK)
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '17' # JDK 17 برای فلاتر توصیه می شود
+          distribution: 'temurin' # توزیع Temurin از JDK (توصیه شده)
+          java-version: '17'      # نسخه JDK مورد نیاز (JDK 17 برای فلاتر توصیه می شود)
 
-      - name: Set up Flutter
+      - name: Set up Flutter # مرحله سوم: نصب و تنظیم Flutter SDK
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.32.4' # نسخه دقیق Flutter
-          channel: 'stable'
+          flutter-version: '3.32.4' # نسخه دقیق Flutter SDK که پروژه شما با آن کار می کند
+          channel: 'stable'         # استفاده از کانال stable (پایدار) فلاتر
 
-      # مسیر Android SDK را تنظیم می کنیم
-      - name: Define Android SDK Root
+      - name: Install Android SDK platforms and build tools # مرحله چهارم: نصب کامپوننت های Android SDK
         run: |
+          # مسیر Android SDK Root را تنظیم می کنیم (مهم برای یافتن sdkmanager و ابزارها)
           echo "ANDROID_SDK_ROOT=$HOME/Android/sdk" >> $GITHUB_ENV
+          # مسیر cmdline-tools و platform-tools را به PATH اضافه می کنیم تا دستورات پیدا شوند
           echo "$HOME/Android/sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
           echo "$HOME/Android/sdk/platform-tools" >> $GITHUB_PATH
 
-      - name: Install Android SDK platforms and build tools
-        run: |
-          # نصب cmdline-tools به صورت دستی
-          mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
-          wget https://dl.google.com/android/repository/commandlinetools-linux-8583023_latest.zip -O cmdline-tools.zip
+          # ساخت پوشه برای cmdline-tools
+          mkdir -p $ANDROID_SDK_ROOT/cmdline-tools/latest
+
+          # دانلود آخرین نسخه Command Line Tools برای لینوکس (لینک پایدار)
+          # از -O برای تعیین نام فایل خروجی استفاده می شود
+          wget https://dl.google.com/android/repository/commandlinetools-linux-latest.zip -O cmdline-tools.zip
+          
+          # استخراج فایل های cmdline-tools به پوشه latest
           unzip -q cmdline-tools.zip -d $ANDROID_SDK_ROOT/cmdline-tools/latest
+          # حذف فایل فشرده دانلود شده
           rm cmdline-tools.zip
           
-          # پذیرش لایسنس های Android SDK به صورت خودکار
-          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses
+          # پذیرش لایسنس های Android SDK به صورت خودکار با استفاده از sdkmanager
+          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses || true
           
-          # نصب پلتفرم ها و ابزارهای بیلد
+          # نصب پلتفرم اندروید 34، ابزارهای بیلد 34.0.0 و platform-tools با استفاده از sdkmanager
           $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "platforms;android-34" "build-tools;34.0.0" "platform-tools"
 
-      - name: Restore Flutter packages
-        run: flutter pub get # دریافت پکیج های پروژه
+      - name: Restore Flutter packages # مرحله پنجم: دریافت و بازیابی پکیج های Dart/Flutter
+        run: flutter pub get
 
       # - name: Decode Google Services (Optional for Firebase)
+      #   # این مرحله اگر پروژه از Firebase استفاده می کند و شما GOOGLE_SERVICES_JSON را به عنوان Secret تعریف کرده اید، اجرا می شود.
+      #   # در حال حاضر، این بخش غیرفعال (کامنت شده) است. اگر نیاز داشتید، علامت # را از ابتدای خطوط حذف کرده و Secret را تعریف کنید.
       #   if: ${{ secrets.GOOGLE_SERVICES_JSON != '' }}
       #   run: |
       #     echo "${{ secrets.GOOGLE_SERVICES_JSON }}" > android/app/google-services.json
 
-      - name: Build Android APK
-        run: flutter build apk --release # بیلد نسخه APK
+      - name: Build Android APK # مرحله ششم: ساخت فایل APK نسخه Release
+        run: flutter build apk --release
 
-      - name: Upload APK artifact
+      - name: Upload APK artifact # مرحله هفتم: آپلود فایل APK ساخته شده به عنوان Artifact
         uses: actions/upload-artifact@v4
         with:
-              name: app-release-apk
-              path: build/app/outputs/flutter-apk/app-release.apk
+          name: app-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
 
-      - name: Build Android AppBundle
-        run: flutter build appbundle --release # بیلد نسخه AppBundle
+      - name: Build Android AppBundle # مرحله هشتم: ساخت فایل AppBundle نسخه Release (برای انتشار در Google Play)
+        run: flutter build appbundle --release
 
-      - name: Upload AppBundle artifact
+      - name: Upload AppBundle artifact # مرحله نهم: آپلود فایل AppBundle ساخته شده به عنوان Artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-release-bundle
