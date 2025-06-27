@@ -46,9 +46,6 @@ jobs:
           # (platform-tools به صورت مستقل هم نصب می شود تا از وجود آن اطمینان حاصل شود)
           sdkmanager "platforms;android-34" "build-tools;34.0.0" "platform-tools"
 
-      - name: List project files for debugging # مرحله اشکال زدایی: لیست کردن فایل های پروژه
-        run: ls -R
-
       - name: Restore Flutter packages # مرحله پنجم: دریافت و بازیابی پکیج های Dart/Flutter
         run: flutter pub get
 
