@@ -11,6 +11,14 @@ jobs:
   build:
     runs-on: ubuntu-latest # Workflow روی یک ماشین مجازی لینوکس (اوبونتو) اجرا می شود.
 
+    # تعریف WORKING_DIRECTORY به عنوان متغیر محیطی در کل job
+    env:
+      FLUTTER_PROJECT_DIR: chatter_flutter # <-- نام پوشه ای که پروژه فلاتر شما داخل آن است (مثال: chatter_flutter)
+                                           # لطفا این را با نام دقیق پوشه پروژه خود جایگزین کنید!
+                                           # اگر نام پوشه دیگری است (مثلا 'app' یا 'my_flutter_app')، آن را تغییر دهید.
+                                           # اگر مستقیماً در ریشه مخزن است، این خط را کامنت کنید یا حذف کنید.
+
+
     steps:
       - name: Checkout code # مرحله اول: دانلود کدهای پروژه از مخزن GitHub
         uses: actions/checkout@v4
@@ -46,30 +54,34 @@ jobs:
           # (platform-tools به صورت مستقل هم نصب می شود تا از وجود آن اطمینان حاصل شود)
           sdkmanager "platforms;android-34" "build-tools;34.0.0" "platform-tools"
 
+      - name: Change to project directory # مرحله جدید: تغییر به دایرکتوری پروژه فلاتر
+        run: cd $FLUTTER_PROJECT_DIR # یا cd if you don't define FLUTTER_PROJECT_DIR
+
       - name: Restore Flutter packages # مرحله پنجم: دریافت و بازیابی پکیج های Dart/Flutter
+        # این دستور حالا در داخل پوشه پروژه فلاتر اجرا می شود
         run: flutter pub get
 
       # - name: Decode Google Services (Optional for Firebase)
-      #   # این مرحله اگر پروژه از Firebase استفاده می کند و شما GOOGLE_SERVICES_JSON را به عنوان Secret تعریف کرده اید، اجرا می شود.
-      #   # در حال حاضر، این بخش غیرفعال (کامنت شده) است. اگر نیاز داشتید، علامت # را از ابتدای خطوط حذف کرده و Secret را تعریف کنید.
-      #   if: ${{ secrets.GOOGLE_SERVICES_JSON != '' }}
+      #   if: ${{ secrets.GOOGLE_SERVICES_DIR != '' }}
       #   run: |
-      #     echo "${{ secrets.GOOGLE_SERVICES_JSON }}" > android/app/google-services.json
+      #     echo "${{ secrets.GOOGLE_SERVICES_DIR }}" > android/app/google-services.json
 
       - name: Build Android APK # مرحله ششم: ساخت فایل APK نسخه Release
+        # این دستور حالا در داخل پوشه پروژه فلاتر اجرا می شود
         run: flutter build apk --release
 
       - name: Upload APK artifact # مرحله هفتم: آپلود فایل APK ساخته شده به عنوان Artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: $FLUTTER_PROJECT_DIR/build/app/outputs/flutter-apk/app-release.apk
 
       - name: Build Android AppBundle # مرحله هشتم: ساخت فایل AppBundle نسخه Release (برای انتشار در Google Play)
+        # این دستور حالا در داخل پوشه پروژه فلاتر اجرا می شود
         run: flutter build appbundle --release
 
       - name: Upload AppBundle artifact # مرحله نهم: آپلود فایل AppBundle ساخته شده به عنوان Artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-release-bundle
-          path: build/app/outputs/bundle/release/app-release.aab
+          path: $FLUTTER_PROJECT_DIR/build/app/outputs/bundle/release/app-release.aab
