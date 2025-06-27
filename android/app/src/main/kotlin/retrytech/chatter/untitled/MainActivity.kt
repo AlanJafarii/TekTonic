@@ -1,24 +1,15 @@
 package com.retrytech.chatter.untitled
 
-import com.baseflow.permissionhandler.PermissionHandlerPlugin
-import com.retrytech.retrytech_plugin.RetrytechPlugin
-import com.revenuecat.purchases_flutter.PurchasesFlutterPlugin
-import com.tekartik.sqflite.SqflitePlugin
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
-import io.flutter.plugins.googlemobileads.GoogleMobileAdsPlugin
-import io.flutter.plugins.pathprovider.PathProviderPlugin
-import io.flutter.plugins.videoplayer.VideoPlayerPlugin
+import io.flutter.plugins.GeneratedPluginRegistrant // این خط را اضافه می کنیم
 
 class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
-        super.configureFlutterEngine(flutterEngine)
-        flutterEngine.plugins.add(GoogleMobileAdsPlugin())
-        flutterEngine.plugins.add(PathProviderPlugin())
-        flutterEngine.plugins.add(PurchasesFlutterPlugin())
-        flutterEngine.plugins.add(SqflitePlugin())
-        flutterEngine.plugins.add(VideoPlayerPlugin())
-        flutterEngine.plugins.add(PermissionHandlerPlugin())
-        flutterEngine.plugins.add(RetrytechPlugin())
+        // این خط بسیار مهم است:
+        // GeneratedPluginRegistrant.registerWith(flutterEngine)
+        // تمام پلاگین ها را به صورت خودکار رجیستر می کند.
+        // نباید پلاگین ها را دستی اضافه کرد.
+        GeneratedPluginRegistrant.registerWith(flutterEngine) // این خط را اضافه یا مطمئن می شویم که وجود دارد
     }
 }
