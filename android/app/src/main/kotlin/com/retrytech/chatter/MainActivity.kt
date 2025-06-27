@@ -1,4 +1,4 @@
-package com.retrytech.chatter.untitled
+package com.retrytech.chatter
 
 import io.flutter.embedding.android.FlutterActivity
 
